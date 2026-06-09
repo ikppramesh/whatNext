@@ -20,6 +20,7 @@ export interface UseReposState {
   meta: ReposMeta | null;
   isLoading: boolean;
   error: string | null;
+  lastRefreshed: Date | null;
 }
 
 const DEBOUNCE_MS = 300;
@@ -31,6 +32,7 @@ export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1) {
     meta: null,
     isLoading: true,
     error: null,
+    lastRefreshed: null,
   });
 
   const abortRef = useRef<AbortController | null>(null);
@@ -72,6 +74,7 @@ export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1) {
           },
           isLoading: false,
           error: null,
+          lastRefreshed: new Date(),
         });
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;

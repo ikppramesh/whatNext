@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Clock } from 'lucide-react';
+import { formatRefreshTime } from '@/lib/utils';
 import type { TimeFilter, SortOption } from '@/types/github';
 import { useRepos } from '@/hooks/useRepos';
 import { useRateLimit } from '@/hooks/useRateLimit';
@@ -30,7 +31,7 @@ export function TrendingDashboard() {
     setPage(1);
   }, []);
 
-  const { repos, meta, isLoading, error, refetch } = useRepos(timeFilter, sort, page);
+  const { repos, meta, isLoading, error, refetch, lastRefreshed } = useRepos(timeFilter, sort, page);
   const { update: updateRateLimit, ...rateLimitState } = useRateLimit();
 
   const handleRefresh = useCallback(() => {
@@ -61,6 +62,19 @@ export function TrendingDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Last refreshed banner */}
+      <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <Clock className="h-3.5 w-3.5 shrink-0" />
+        {lastRefreshed ? (
+          <span>
+            Last refreshed on{' '}
+            <span className="text-zinc-400 font-medium">{formatRefreshTime(lastRefreshed)}</span>
+          </span>
+        ) : (
+          <span>Fetching latest data…</span>
+        )}
+      </div>
+
       {/* Controls bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">

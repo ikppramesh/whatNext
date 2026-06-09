@@ -12,6 +12,19 @@ export function formatNumber(n: number): string {
   return n.toString();
 }
 
+// Returns e.g. "Jun 9, 2026, 3:45:22 PM IST" in the browser's local timezone
+export function formatRefreshTime(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  }).format(date);
+}
+
 export function formatRelativeTime(dateStr: string): string {
   try {
     return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
