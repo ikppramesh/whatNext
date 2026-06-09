@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { GitHubRepo, TimeFilter, SortOption } from '@/types/github';
+import { buildQuery, buildQueryString } from '@/lib/queryBuilder';
+import { searchRepositories } from '@/lib/github';
 
 export interface ReposMeta {
   totalCount: number;
@@ -21,6 +23,7 @@ export interface UseReposState {
 }
 
 const DEBOUNCE_MS = 300;
+const PER_PAGE = 30;
 
 export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1) {
   const [state, setState] = useState<UseReposState>({
@@ -42,16 +45,34 @@ export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1) {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const url = `/api/repos?timeFilter=${tf}&sort=${s}&page=${p}`;
-        const response = await fetch(url, { signal });
+        const params = buildQuery(tf, s, p, PER_PAGE);
+        const qs = buildQueryString(params);
 
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(body.error ?? `HTTP ${response.status}`);
-        }
+        // Call the GitHub Search API directly from the browser.
+        // GitHub exposes X-RateLimit-* via Access-Control-Expose-Headers so
+        // rate limit tracking works without a server proxy.
+        const { data, rateLimit } = await searchRepositories(qs, undefined, signal);
 
-        const data = await response.json();
-        setState({ repos: data.repos, meta: data.meta, isLoading: false, error: null });
+        // GitHub API has no native watchers sort — re-sort the page client-side.
+        const items =
+          s === 'watchers'
+            ? [...data.items].sort((a, b) => b.watchers_count - a.watchers_count)
+            : data.items;
+
+        setState({
+          repos: items,
+          meta: {
+            totalCount: data.total_count,
+            rateLimitRemaining: rateLimit.remaining,
+            rateLimitLimit: rateLimit.limit,
+            rateLimitReset: rateLimit.reset,
+            incompleteResults: data.incomplete_results,
+            perPage: PER_PAGE,
+            page: p,
+          },
+          isLoading: false,
+          error: null,
+        });
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         setState((prev) => ({

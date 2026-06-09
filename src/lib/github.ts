@@ -20,7 +20,8 @@ function extractRateLimit(headers: Headers): RateLimitInfo {
 
 export async function searchRepositories(
   queryString: string,
-  token?: string
+  token?: string,
+  signal?: AbortSignal
 ): Promise<GitHubFetchResult> {
   const url = `${GITHUB_API_BASE}/search/repositories?${queryString}`;
 
@@ -33,7 +34,7 @@ export async function searchRepositories(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetchWithBackoff(url, { headers });
+  const response = await fetchWithBackoff(url, { headers, signal });
   const rateLimit = extractRateLimit(response.headers);
 
   if (response.status === 429) {
