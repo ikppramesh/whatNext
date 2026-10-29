@@ -29,7 +29,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Apply the saved theme before first paint to avoid a flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-100">
         <Header />
         {children}

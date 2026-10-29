@@ -1,4 +1,5 @@
 import { TrendingUp } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   return (
@@ -13,14 +14,17 @@ export function Header() {
               What&apos;s Next
             </span>
           </div>
-          <a
-            href="https://docs.github.com/en/rest/search/search"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            GitHub API
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://docs.github.com/en/rest/search/search"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              GitHub API
+            </a>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>
