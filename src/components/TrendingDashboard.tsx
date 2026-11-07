@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Clock } from 'lucide-react';
-import { formatRefreshTime } from '@/lib/utils';
+import { cn, formatRefreshTime } from '@/lib/utils';
 import type { TimeFilter, SortOption } from '@/types/github';
 import { useRepos } from '@/hooks/useRepos';
 import { useRateLimit } from '@/hooks/useRateLimit';
@@ -12,13 +12,23 @@ import { RepoGrid } from '@/components/repos/RepoGrid';
 import { RateLimitBanner } from '@/components/ui/RateLimitBanner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Pagination, MAX_GITHUB_PAGES } from '@/components/ui/Pagination';
+import { RisingStarsList } from '@/components/repos/RisingStarsList';
+import { useRisingRepos } from '@/hooks/useRisingRepos';
 
 const PER_PAGE = 30;
+
+type View = 'trending' | 'rising';
+const VIEWS: { value: View; label: string }[] = [
+  { value: 'trending', label: 'Trending' },
+  { value: 'rising', label: 'Rising stars' },
+];
 
 export function TrendingDashboard() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h');
   const [sort, setSort] = useState<SortOption>('stars');
   const [page, setPage] = useState(1);
+  const [view, setView] = useState<View>('trending');
+  const isRising = view === 'rising';
 
   // Reset to page 1 whenever the filter or sort changes
   const handleTimeFilterChange = useCallback((value: TimeFilter) => {
@@ -31,7 +41,10 @@ export function TrendingDashboard() {
     setPage(1);
   }, []);
 
-  const { repos, meta, isLoading, error, refetch, lastRefreshed } = useRepos(timeFilter, sort, page);
+  const trending = useRepos(timeFilter, sort, page, !isRising);
+  const rising = useRisingRepos(isRising);
+  const { isLoading, error, refetch, lastRefreshed } = isRising ? rising : trending;
+  const meta = isRising ? rising.meta : trending.meta;
   const { update: updateRateLimit, ...rateLimitState } = useRateLimit();
 
   const handleRefresh = useCallback(() => {
@@ -56,8 +69,8 @@ export function TrendingDashboard() {
 
   const isDisabled = rateLimitState.isExhausted;
 
-  const totalPages = meta
-    ? Math.min(Math.ceil(meta.totalCount / PER_PAGE), MAX_GITHUB_PAGES)
+  const totalPages = trending.meta
+    ? Math.min(Math.ceil(trending.meta.totalCount / PER_PAGE), MAX_GITHUB_PAGES)
     : 0;
 
   return (
@@ -78,21 +91,47 @@ export function TrendingDashboard() {
       {/* Controls bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <TimeFilterTabs
-            value={timeFilter}
-            onChange={handleTimeFilterChange}
-            disabled={isDisabled}
-          />
-          <SortSelector
-            value={sort}
-            onChange={handleSortChange}
-            disabled={isDisabled}
-          />
+          <div
+            role="tablist"
+            aria-label="Dashboard view"
+            className="flex items-center gap-0.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800"
+          >
+            {VIEWS.map((v) => (
+              <button
+                key={v.value}
+                role="tab"
+                aria-selected={view === v.value}
+                onClick={() => setView(v.value)}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-all select-none',
+                  view === v.value
+                    ? 'bg-zinc-700 text-zinc-100 shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                )}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+          {!isRising && (
+            <>
+              <TimeFilterTabs
+                value={timeFilter}
+                onChange={handleTimeFilterChange}
+                disabled={isDisabled}
+              />
+              <SortSelector
+                value={sort}
+                onChange={handleSortChange}
+                disabled={isDisabled}
+              />
+            </>
+          )}
         </div>
         <div className="flex items-center gap-3">
-          {meta && !isLoading && (
+          {!isRising && trending.meta && !isLoading && (
             <p className="text-xs text-zinc-500">
-              {meta.totalCount.toLocaleString()} repositories matched
+              {trending.meta.totalCount.toLocaleString()} repositories matched
             </p>
           )}
           <button
@@ -116,16 +155,23 @@ export function TrendingDashboard() {
       )}
 
       {/* Results grid */}
-      {(!error || isLoading) && (
+      {(!error || isLoading) && isRising && (
+        <RisingStarsList
+          items={rising.items}
+          baselineDays={rising.baselineDays}
+          isLoading={isLoading}
+        />
+      )}
+      {(!error || isLoading) && !isRising && (
         <RepoGrid
-          repos={repos}
+          repos={trending.repos}
           isLoading={isLoading}
           timeFilter={timeFilter}
         />
       )}
 
       {/* Pagination */}
-      {!error && !isLoading && totalPages > 1 && (
+      {!isRising && !error && !isLoading && totalPages > 1 && (
         <Pagination
           page={page}
           totalPages={totalPages}

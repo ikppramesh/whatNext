@@ -11,6 +11,7 @@ A real-time GitHub trending dashboard focused on **AI, Data Science, and Data En
 | Feature | Details |
 |---|---|
 | Time filters | Browse repos trending in the last **1h · 24h · 2d · 1w · 1m** |
+| Rising stars | Weekly view ranking young repos by star gain this week, with % change vs the prior week. GitHub has no star history, so gains come from daily snapshots saved in your browser (ranked by stars/day until a baseline exists) |
 | Sort options | Sort by **Stars · Forks · Activity · Watching** |
 | Last refreshed | Timestamp at the top showing when data was last fetched — in your local timezone |
 | Refresh button | Manually re-fetch the latest results at any time |

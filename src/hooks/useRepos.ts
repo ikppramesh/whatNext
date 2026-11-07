@@ -26,7 +26,7 @@ export interface UseReposState {
 const DEBOUNCE_MS = 300;
 const PER_PAGE = 30;
 
-export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1) {
+export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1, enabled = true) {
   const [state, setState] = useState<UseReposState>({
     repos: [],
     meta: null,
@@ -89,6 +89,7 @@ export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1) {
   );
 
   useEffect(() => {
+    if (!enabled) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       fetchRepos(timeFilter, sort, page);
@@ -96,7 +97,7 @@ export function useRepos(timeFilter: TimeFilter, sort: SortOption, page = 1) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [timeFilter, sort, page, fetchRepos]);
+  }, [timeFilter, sort, page, enabled, fetchRepos]);
 
   useEffect(() => {
     return () => { abortRef.current?.abort(); };

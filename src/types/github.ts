@@ -48,6 +48,16 @@ export interface ReposApiResponse {
   };
 }
 
+export interface RisingRepo {
+  repo: GitHubRepo;
+  // Stars gained since the baseline snapshot; null if the repo wasn't in it.
+  gain: number | null;
+  // Stars gained in the week before the baseline; null if unknown.
+  previousGain: number | null;
+  // Lifetime average, used to rank until a baseline exists.
+  starsPerDay: number;
+}
+
 export type TimeFilter = '1h' | '24h' | '2d' | '1w' | '1m';
 export type SortOption = 'stars' | 'forks' | 'updated' | 'watchers';
 

@@ -53,6 +53,21 @@ export function buildQuery(
   };
 }
 
+// Rising stars: young, active repos. Growth is computed client-side from
+// star snapshots (see starHistory.ts), so we fetch the top 100 by stars.
+export function buildRisingQuery(): QueryParams {
+  const day = 24 * 60 * 60 * 1000;
+  const iso = (offsetMs: number) =>
+    new Date(Date.now() - offsetMs).toISOString().replace(/\.\d{3}Z$/, 'Z');
+  return {
+    q: `pushed:>${iso(7 * day)} created:>${iso(180 * day)} stars:>=100 language:python`,
+    sort: 'stars',
+    order: 'desc',
+    per_page: 100,
+    page: 1,
+  };
+}
+
 export function buildQueryString(params: QueryParams): string {
   return new URLSearchParams(
     Object.entries(params).reduce<Record<string, string>>(
